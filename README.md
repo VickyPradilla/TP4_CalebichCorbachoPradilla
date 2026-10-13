@@ -1,4 +1,4 @@
-<img src="logo_itba.jpg" alt="Logo ITBA" width="200">
+<img src="logo_itba.jpg" alt="Logo ITBA" width="2000">
 
 # TP4: Bases de Datos, SQL y Manejo de Versiones
 
