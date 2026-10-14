@@ -122,7 +122,6 @@ En este caso se viola la cuarta forma normal: las dependencias son multivaluadas
 
 CREATE INDEX idx_pacientes_ciudad ON Pacientes(ciudad);
 
-![][image8]
 
 *Este caso está pensado para tablas con una gran cantidad de datos. En ese caso se puede crear un índice sobre la columna ciudad, que guarda sus valores ordenados y permite agrupar sin recorrer toda la tabla fila por fila. Esto ahorra tiempo en las consultas, pero a cambio ocupa espacio extra y hace un poco más lentas las inserciones y actualizaciones, porque el índice hay que mantenerlo al día. Otra opción, que no es una query, sería pasar ciudad a una tabla aparte y relacionarla con Pacientes mediante una clave foránea, pero eso implica modificar la estructura de la base y reescribir las consultas con JOIN.*
 
@@ -133,7 +132,6 @@ SELECT \*,
        DATE\_PART('year', AGE(CURRENT\_DATE, p.fecha\_nacimiento))::int AS edad  
 FROM pacientes;
 
-![][image9]  
 ![][image10]  
 
 3\. Obtener nombre y edad de pacientes menores de edad.  
@@ -148,11 +146,13 @@ WHERE edad < 18;
 Las Heras 121” en “Buenos Aires”, pero ahora vive en “Calle Corrientes 500” en  
 “Buenos Aires”. Actualizar la dirección de este paciente en la base de datos.
 
-UPDATE Pacientes
-SET calle = 'Calle Corrientes', numero = '500'
-WHERE nombre = 'Luciana Gómez'
-  AND calle = 'Avenida Las Heras'
+UPDATE Pacientes\
+SET calle = 'Calle Corrientes', numero = '500'\
+WHERE nombre = 'Luciana Gómez'\
+  AND calle = 'Avenida Las Heras'\
   AND numero = '121';
+
+El output devuelto es UPDATE 1, ya que se actualizo la tabla.
 
 
 **5\.** Obtener el nombre y la dirección de los pacientes que viven en Buenos Aires.
@@ -167,11 +167,13 @@ WHERE ciudad ilike '%B%Ai\_\_s%'
 
 *Para corregir las inconsistencias primero se hace un relevamiento de los valores existentes en la columna ciudad y se define cómo debe escribirse cada una. Luego se identifican las variantes mediante búsqueda por coincidencia y se las reemplaza por el valor correcto con un UPDATE. Finalmente se verifica con un GROUP BY que cada ciudad aparezca una sola vez. Para evitar que el problema se repita, lo ideal sería que ciudad sea una tabla aparte, referenciada desde Pacientes mediante una clave foránea, de modo que solo puedan cargarse ciudades ya definidas.*
 
--- Relevamiento de las ciudades existentes
+-- Relevamiento de las ciudades existentes\
 SELECT DISTINCT ciudad FROM pacientes ORDER BY ciudad;
 
--- Correccion de las variantes
-UPDATE pacientes SET ciudad = 'Buenos Aires'
+![][image15]![][image16]![][image17]  
+
+-- Correccion de las variantes\
+UPDATE pacientes  SET ciudad = 'Buenos Aires'
 WHERE ciudad ILIKE '%B%Ai__s%';
 
 UPDATE pacientes SET ciudad = 'Córdoba'
@@ -186,50 +188,45 @@ WHERE ciudad = 'rosario';
 -- Verificacion
 SELECT ciudad, COUNT(*) FROM pacientes GROUP BY ciudad ORDER BY ciudad;
 
-![][image14]  
-![][image15]![][image16]![][image17]  
-![][image18]  
 ![][image19]
 
 **7\.** Cantidad de pacientes por sexo que viven en cada ciudad.
 
-SELECT p.ciudad,
-       SUM(CASE WHEN s.descripcion = 'Femenino'  THEN 1 ELSE 0 END) AS femeninos,
-       SUM(CASE WHEN s.descripcion = 'Masculino' THEN 1 ELSE 0 END) AS masculinos
-FROM pacientes p
-JOIN sexobiologico s ON s.id_sexo = p.id_sexo
-GROUP BY p.ciudad
+SELECT p.ciudad,\
+       SUM(CASE WHEN s.descripcion = 'Femenino'  THEN 1 ELSE 0 END) AS femeninos,\
+       SUM(CASE WHEN s.descripcion = 'Masculino' THEN 1 ELSE 0 END) AS masculinos\
+FROM pacientes p\
+JOIN sexobiologico s ON s.id_sexo = p.id_sexo\
+GROUP BY p.ciudad\
 ORDER BY p.ciudad;
 
 ![][image20]
 
-El SUM lo hago para que quede más prolija la tabla.
+Usamos SUM para que quede más prolija la tabla.
 
 **8\.** Obtener todas las consultas médicas realizadas por el médico con ID igual a 3  
 durante el mes de agosto de 2024\.
 
-SELECT * FROM Consultas
+SELECT * FROM Consultas\
 WHERE id_medico = 3 AND fecha >= '2024-08-01' AND fecha <= '2024-08-31';
-
-![][image21]  
+ 
 ![][image22]  
 
 9\. Obtener la cantidad de recetas emitidas por cada médico.  
 
-SELECT m.id_medico, COUNT(r.id_receta) AS cantidad_recetas
-FROM medicos m
-LEFT JOIN recetas r ON r.id_medico = m.id_medico
-GROUP BY m.id_medico
+SELECT m.id_medico, COUNT(r.id_receta) AS cantidad_recetas\
+FROM medicos m\
+LEFT JOIN recetas r ON r.id_medico = m.id_medico\
+GROUP BY m.id_medico\
 ORDER BY cantidad_recetas DESC, m.id_medico;
 
--- Si se quiere mostrar el nombre del medico, se agrega nombre al SELECT y al GROUP BY:
-SELECT m.id_medico, m.nombre, COUNT(r.id_receta) AS cantidad_recetas
-FROM medicos m
-LEFT JOIN recetas r ON r.id_medico = m.id_medico
-GROUP BY m.id_medico, m.nombre
+-- Si se quiere mostrar el nombre del medico, se agrega nombre al SELECT y al GROUP BY:\
+SELECT m.id_medico, m.nombre, COUNT(r.id_receta) AS cantidad_recetas\
+FROM medicos m\
+LEFT JOIN recetas r ON r.id_medico = m.id_medico\
+GROUP BY m.id_medico, m.nombre\
 ORDER BY cantidad_recetas DESC, m.id_medico;
 
-![][image23]
 
 ![][image24]
 
@@ -248,9 +245,9 @@ Esto resulta confuso ya que habria que acordarse el ID de cada medico, por lo qu
 10\. Obtener el nombre de los pacientes junto con la fecha y el diagnóstico de todas las  
 consultas médicas realizadas en agosto del 2024\.  
 
-SELECT P.nombre, C.fecha, C.diagnostico
-FROM consultas C
-JOIN pacientes P ON C.id_paciente = P.id_paciente
+SELECT P.nombre, C.fecha, C.diagnostico\
+FROM consultas \
+JOIN pacientes P ON C.id_paciente = P.id_paciente\
 WHERE C.fecha BETWEEN '2024-08-01' AND '2024-08-31';
 
 ![][image31]
@@ -258,11 +255,11 @@ WHERE C.fecha BETWEEN '2024-08-01' AND '2024-08-31';
 11\. Obtener el nombre de los medicamentos prescritos más de una vez por el médico  
 con ID igual a 2\.
 
-SELECT  med.nombre AS medicamento, COUNT(*) AS cant_recetas
-FROM recetas r
-JOIN medicamentos med ON r.id_medicamento = med.id_medicamento
-WHERE r.id_medicamento = 2, 
-GROUP BY med.id_medicamento, med.nombre
+SELECT  med.nombre AS medicamento, COUNT(*) AS cant_recetas\
+FROM recetas r\
+JOIN medicamentos med ON r.id_medicamento = med.id_medicamento\
+WHERE r.id_medicamento = 2, \
+GROUP BY med.id_medicamento, med.nombre\
 HAVING COUNT (*) > 1;
 
 
@@ -270,10 +267,10 @@ HAVING COUNT (*) > 1;
 
 12\. Obtener el nombre de cada paciente junto con la cantidad total de recetas que ha recibido.
 
-SELECT P.nombre, COUNT(r.id_receta) AS total_recetas
-FROM Pacientes P
-LEFT JOIN Recetas r ON r.id_paciente = P.id_paciente
-GROUP BY P.id_paciente, P.nombre
+SELECT P.nombre, COUNT(r.id_receta) AS total_recetas\
+FROM Pacientes P\
+LEFT JOIN Recetas r ON r.id_paciente = P.id_paciente\
+GROUP BY P.id_paciente, P.nombre\
 ORDER BY P.id_paciente;
 
 ![][image33]  
@@ -281,33 +278,32 @@ ORDER BY P.id_paciente;
 
 13\. Obtener el nombre de cada especialidad y la cantidad de médicos que pertenecen a ella, mostrando únicamente aquellas especialidades que tienen más de 2 médicos.  
 
-SELECT e.nombre AS especialidad,
-       COUNT(M.id_medico) AS cant_medicos
-FROM especialidades e
-JOIN medicos M ON e.id_especialidad = M.especialidad_id
-GROUP BY e.id_especialidad, e.nombre
+SELECT e.nombre AS especialidad,\
+       COUNT(M.id_medico) AS cant_medicos\
+FROM especialidades e\
+JOIN medicos M ON e.id_especialidad = M.especialidad_id\
+GROUP BY e.id_especialidad, e.nombre\
 HAVING COUNT(M.id_medico) > 2;
 
-
-![][image34]  
+  
 ![][image35]  
 
 **14\.** Obtener el nombre y la edad de los pacientes cuya edad sea mayor al promedio de  edad de todos los pacientes, ordenados de mayor a menor edad.  
 
-SELECT nombre, edad
-FROM pacientes_con_edad
-WHERE edad > (SELECT AVG(edad) FROM pacientes_con_edad)
+SELECT nombre, edad\
+FROM pacientes_con_edad\
+WHERE edad > (SELECT AVG(edad) FROM pacientes_con_edad)\
 ORDER BY edad DESC;
 
 ![][image36]
 
 **15\.** Obtener los medicamentos que ocupan las dos primeras posiciones en cantidad de recetas emitidas, indicando para cada uno la cantidad de recetas. 
 
-SELECT med.nombre AS medicamento, COUNT(*) AS cant_recetas
-FROM recetas r
-JOIN medicamentos med ON r.id_medicamento = med.id_medicamento
-GROUP BY med.nombre
-ORDER BY cant_recetas DESC
+SELECT med.nombre AS medicamento, COUNT(*) AS cant_recetas\
+FROM recetas r\
+JOIN medicamentos med ON r.id_medicamento = med.id_medicamento\
+GROUP BY med.nombre\
+ORDER BY cant_recetas DESC\
 LIMIT 2;
 
 ![][image37]  
@@ -318,12 +314,12 @@ Existe un empate en la segunda posición entre 5 medicamentos con 4 recetas. Se 
 16\. Obtener el nombre del paciente junto con la fecha de su última consulta y el  
 diagnóstico asociado.  
 
-SELECT P.nombre, C.fecha, C.diagnostico
-FROM Pacientes P
-JOIN Consultas C ON C.id_paciente = P.id_paciente
-WHERE C.fecha = (
-    SELECT MAX(c2.fecha)
-    FROM consultas c2
+SELECT P.nombre, C.fecha, C.diagnostico\
+FROM Pacientes P\
+JOIN Consultas C ON C.id_paciente = P.id_paciente\
+WHERE C.fecha = (\
+    SELECT MAX(c2.fecha)\
+    FROM consultas c2\
     WHERE c2.id_paciente = C.id_paciente
 );
 
@@ -331,11 +327,11 @@ WHERE C.fecha = (
 
 17\. Obtener el nombre del médico junto con el nombre del paciente y el número total de consultas realizadas por cada médico para cada paciente, ordenado por médico y paciente.  
 
-SELECT M.nombre AS medico, P.nombre AS paciente, COUNT(C.id_consulta) AS cant_consultas
-FROM consultas C
-JOIN medicos M ON M.id_medico = C.id_medico
-JOIN pacientes P ON P.id_paciente = C.id_paciente
-GROUP BY M.id_medico, M.nombre, P.id_paciente, P.nombre
+SELECT M.nombre AS medico, P.nombre AS paciente, COUNT(C.id_consulta) AS cant_consultas\
+FROM consultas C\
+JOIN medicos M ON M.id_medico = C.id_medico\
+JOIN pacientes P ON P.id_paciente = C.id_paciente\
+GROUP BY M.id_medico, M.nombre, P.id_paciente, P.nombre\
 ORDER BY M.nombre, P.nombre;
 
 
@@ -343,14 +339,14 @@ ORDER BY M.nombre, P.nombre;
 
 **18\.** Obtener el nombre del medicamento junto con el total de recetas prescritas para ese medicamento, el nombre del médico que lo recetó y el nombre del paciente al que se le recetó, ordenado por total de recetas en orden descendente.  
 
-SELECT med.nombre AS medicamento, COUNT(r.id_receta) AS cant_recetas, M.nombre AS medico, P.nombre AS paciente
-FROM recetas r
-JOIN medicamentos med ON med.id_medicamento = r.id_medicamento
-JOIN medicos M ON M.id_medico = r.id_medico
-JOIN pacientes P ON P.id_paciente = r.id_paciente
-GROUP BY med.id_medicamento, med.nombre,
-         M.id_medico, M.nombre,
-         P.id_paciente, P.nombre
+SELECT med.nombre AS medicamento, COUNT(r.id_receta) AS cant_recetas, M.nombre AS medico, P.nombre AS paciente\
+FROM recetas r\
+JOIN medicamentos med ON med.id_medicamento = r.id_medicamento\
+JOIN medicos M ON M.id_medico = r.id_medico\
+JOIN pacientes P ON P.id_paciente = r.id_paciente\
+GROUP BY med.id_medicamento, med.nombre,\
+         M.id_medico, M.nombre,\
+         P.id_paciente, P.nombre\
 ORDER BY cant_recetas DESC;
 
 ![][image40]
@@ -358,10 +354,10 @@ ORDER BY cant_recetas DESC;
 19\. Obtener el nombre del médico junto con el total de pacientes a los que ha atendido,  
 ordenado por el total de pacientes en orden descendente.  
 
-SELECT M.nombre, COUNT(DISTINCT C.id_paciente) AS cant_pacientes
-FROM consultas C
-JOIN medicos M ON M.id_medico = C.id_medico
-GROUP BY M.id_medico, M.nombre
+SELECT M.nombre, COUNT(DISTINCT C.id_paciente) AS cant_pacientes\
+FROM consultas C\
+JOIN medicos M ON M.id_medico = C.id_medico\
+GROUP BY M.id_medico, M.nombre\
 ORDER BY cant_pacientes DESC;
 
 ![][image41]  
@@ -374,21 +370,21 @@ médico es pediatra (TRUE/FALSE)
 SELECT M.nombre AS medico,
        COUNT(P.id_paciente) AS consultas_menores,
        CASE WHEN e.nombre = 'Pediatría' THEN 'TRUE' ELSE 'FALSE' END AS es_pediatra
-FROM medicos M
-LEFT JOIN especialidades e ON e.id_especialidad = M.especialidad_id
-LEFT JOIN consultas C ON C.id_medico = M.id_medico
-LEFT JOIN pacientes P ON P.id_paciente = C.id_paciente
-     AND EXTRACT(YEAR FROM AGE(CURRENT_DATE, P.fecha_nacimiento)) < 18
-GROUP BY M.id_medico, M.nombre, e.nombre
+FROM medicos M\
+LEFT JOIN especialidades e ON e.id_especialidad = M.especialidad_id\
+LEFT JOIN consultas C ON C.id_medico = M.id_medico\
+LEFT JOIN pacientes P ON P.id_paciente = C.id_paciente\
+     AND EXTRACT(YEAR FROM AGE(CURRENT_DATE, P.fecha_nacimiento)) < 18\
+GROUP BY M.id_medico, M.nombre, e.nombre\
 ORDER BY M.nombre;
 
 ![][image42]
 
 [image1]: img/image1.png
 
-[image2]: img/image2.png
+[image2]: img/diagrama1.png
 
-[image3]: img/image3.png
+[image3]: img/diagrama2.png
 
 [image4]: img/image4.png
 
@@ -398,17 +394,13 @@ ORDER BY M.nombre;
 
 [image7]: img/image7.png
 
-[image8]: img/image8.png
-
-[image9]: img/image9.png
 
 [image10]: img/image10.png
 
-[image11]: img/image11.png
 
 [image12]: img/image12.png
 
-[image13]: img/image13.png
+[image13]: img/ej5_resultados.png
 
 [image14]: img/image14.png
 
@@ -422,7 +414,7 @@ ORDER BY M.nombre;
 
 [image19]: img/image19.png
 
-[image20]: img/image20.png
+[image20]: img/ej7_resultados.png
 
 [image21]: img/image21.png
 
@@ -444,26 +436,26 @@ ORDER BY M.nombre;
 
 [image30]: img/image30.png
 
-[image31]: img/image31.png
+[image31]: img/ej10_resultados.png
 
 [image32]: img/image32.png
 
-[image33]: img/image33.png
+[image33]: img/ej12_resultados.png
 
 [image34]: img/image34.png
 
-[image35]: img/image35.png
+[image35]: img/ej13_resultados.png
 
-[image36]: img/image36.png
+[image36]: img/ej14_resultados.png
 
-[image37]: img/image37.png
+[image37]: img/ej15_resultados.png
 
-[image38]: img/image38.png
+[image38]: img/ej16_resultados.png
 
-[image39]: img/image39.png
+[image39]: img/ej17_resultados.png
 
-[image40]: img/image40.png
+[image40]: img/ej18_resultados.png
 
-[image41]: img/image41.png
+[image41]: img/ej19_resultados.png
 
-[image42]: img/image42.png
+[image42]: img/ej20_resultados.png
